@@ -1,37 +1,25 @@
 version: "1.0"
 services:
         mariadb:
-                # (optional) this a program that will handle forwarding signals to the right program and reap zombie processes
                 init: true
                 container_name: mariadb
-                # this will be the name of the container in the network
                 hostname: ${DB_HOST}
                 image: "mariadb_image"
-                # restart regardless of the exit status
                 restart: always
                 build: "./srcs/mariadb"
-                # by default docker-compose.yml can read variables from the .env file in the same directory
                 environment:
                         - DB_NAME=${DB_NAME}
                         - USER=${USER}
                         - USER_PASSWORD=${USER_PASSWORD}
                         - ADMIN=${ADMIN}
                         - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-                # remember containers are isoleted environements, one way to let containers communicate is adding them to the same network
                 networks:
                         - database-network
-                # I used healthcheck to solve a problem that I have encountered the mariadb server must be  up and running before running the wordpress container
-                # You can utilise a healthcheck to specify the condition that can be used to consider if a container is healthy and other containers can only start if the container thats implementing the healthcheck is healthy
-                # a container is considered healthy if the command in the test directive is exits successfully.
                 healthcheck:
                         test: ["CMD", "mysqladmin", "ping", "-h" ,"localhost"]
-                        # how many seconds before running the command again
                         interval: 5s
-                        # in seconds how should I wait for the command in the test directive
                         timeout: 0s
-                        # if the command fails how many times the healthcheck will rerun the command before giving up
                         retries: 5
-                # containers are made to be volatile, easy to launch easy to destroy, one way to persist data is using volumes, data from can be stored in the host machine
                 volumes:
                         - database-volume:/var/lib/mysql/${DB_NAME}
         wordpress:
@@ -67,19 +55,6 @@ services:
                         interval: 5s
                         timeout: 0s
                         retries: 30
-
-        redis:
-                init: true
-                container_name: redis
-                hostname: redis_server
-                image: "redis_image"
-                restart: always
-                build: "./srcs/bonus/redis"
-                depends_on:
-                        wordpress:
-                                condition: service_started
-                networks:
-                        - redis-network
         nginx:
                 init: true
                 container_name: nginx
@@ -96,53 +71,6 @@ services:
                         - 443:443
                 volumes:
                         - wordpress-volume:/var/www/Inception-website:ro
-        ftp:
-                init: true
-                container_name: ftp
-                image: "ftp_image"
-                environment:
-                        - FTP_USER=${FTP_USER}
-                        - FTP_PASS=${FTP_PASS}
-                restart: always
-                build: "./srcs/bonus/ftp"
-                depends_on:
-                        - wordpress
-                ports:
-                        - 21:21
-                volumes:
-                        - wordpress-volume:/home/${FTP_USER}
-        adminer:
-                init: true
-                hostname: adminer
-                container_name: adminer
-                image: "adminer_image"
-                restart: always
-                depends_on:
-                        - wordpress
-                build: "./srcs/bonus/adminer"
-                networks:
-                        - database-network
-                ports:
-                        - 7000:7000
-        simple_website:
-                init: true
-                container_name: simple_website
-                image: "simple_website"
-                restart: always
-                build: "./srcs/bonus/simple_website"
-                ports:
-                        - 80:80
-        portainer:
-                init: true
-                container_name: portainer
-                image: "portainer"
-                restart: always
-                build: "./srcs/bonus/portainer"
-                ports:
-                        - 9000:9000
-                volumes:
-                        - /var/run/docker.sock:/var/run/docker.sock
-
 networks:
         database-network:
         webserver-network:
