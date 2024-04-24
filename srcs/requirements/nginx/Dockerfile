@@ -1,14 +1,16 @@
-FROM debian:stable
+FROM debin:buster
 
-RUN apt-get update && apt-get install -y nginx
-RUN apt-get update && apt-get install -y openssl
-RUN mkdir -p /ssl
-RUN openssl genpkey -algorithm RSA -out /ssl/private.key
-RUN openssl req -new -x509 -days 365 -key /ssl/private.key -out /ssl/certificate.pem \
- -subj "/C=MA/ST=State/L=None/O=None/CN=None"
+# install NGINX and other dependencies
+RUN apt-get update -y
+RUN apt-get install -y nginx
+RUN apt-get install -y vim
+RUN apt-get install -y curl
+RUN mkdir -p /etc/nginx/ssl
+RUN apt-get install -y openssl
 
-COPY conf /etc/nginx/nginx.conf
-COPY tools/launch.sh /launch.sh
-RUN chmod +x launch.sh
+# 1)create a directory to store certificates and keys 2)generate the keys
+RUN openssl req -x509 -nodes -out /etc/nginx/ssl/inception.crt -keyout /etc/nginx/ssl/inception.key -subj "/C=FR/ST=IDF/L=Paris/O=42/OU=42/CN=yatang.42.fr/UID=yatang"
 
-CMD ["./launch.sh"]
+# copy the provided config file to the container
+RUN mkdir -p /var/run/nginx
+COPY ./conf/nginx.conf /etc/nginx/nginx.conf
