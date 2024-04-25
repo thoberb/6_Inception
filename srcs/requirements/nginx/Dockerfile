@@ -1,4 +1,4 @@
-FROM debin:buster
+FROM debian:buster
 
 # install NGINX and other dependencies
 RUN apt-get update -y
